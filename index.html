@@ -183,6 +183,13 @@
         pointer-events: none;
       }
       #toast.visible { opacity: 1; }
+
+      #catch-overlay {
+        background: rgba(120, 0, 0, 0.35);
+        z-index: 25;
+        pointer-events: none;
+      }
+      #catch-overlay h1 { color: #fff; }
     </style>
   </head>
   <body>
@@ -237,6 +244,12 @@
       <div id="objectives-panel"></div>
       <div id="inventory-bar"></div>
       <div id="toast"></div>
+      <div id="catch-overlay" class="overlay-screen hidden">
+        <div class="panel">
+          <h1>ВАС ПОЙМАЛИ</h1>
+          <p id="catch-message">Ждите конца раунда…</p>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

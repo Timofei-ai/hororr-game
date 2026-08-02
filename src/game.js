@@ -11,6 +11,7 @@ import { createItemPickup } from './pickups.js';
 import { createGeneratorRepair } from './generators.js';
 import { showToast } from './toast.js';
 import { startAmbientAudio } from './audio.js';
+import { createEntityRenderer } from './entity.js';
 
 const MOVE_SEND_INTERVAL = 1 / 20; // 20 обновлений позиции в секунду достаточно для плавности
 const EYE_HEIGHT = 1.6;
@@ -49,7 +50,8 @@ export function startGame(session) {
 
   createFlashlightSystem({
     scene, camera, player, inventory,
-    position: new THREE.Vector3(0, 0, -ROOM_SIZE.depth / 2 + 1.5)
+    position: new THREE.Vector3(0, 0, -ROOM_SIZE.depth / 2 + 1.5),
+    onChange: (isOn) => net.sendFlashlightState(isOn)
   });
 
   const itemPositions = [
@@ -84,13 +86,28 @@ export function startGame(session) {
     remotePlayers.addPlayer(p.id, p.nickname, p.color);
   }
 
-  createHud(session.players, session.selfId);
+  const hud = createHud(session.players, session.selfId);
+  const entity = createEntityRenderer(scene);
 
   net.onPlayerMoved(({ id, position, rotationY }) => {
     remotePlayers.updateTarget(id, position, rotationY);
   });
   net.onPlayerLeft(({ id }) => {
     remotePlayers.removePlayer(id);
+  });
+  net.onEntityUpdate((payload) => entity.setState(payload));
+  net.onPlayerCaught(({ id }) => {
+    hud.setEliminated(id, true);
+    if (id === session.selfId) {
+      player.setFrozen(true);
+      document.getElementById('catch-overlay').classList.remove('hidden');
+    } else {
+      remotePlayers.setEliminated(id);
+    }
+  });
+  net.onGameOver(() => {
+    document.getElementById('catch-message').textContent = 'Раунд окончен: все игроки пойманы.';
+    showToast('Все игроки пойманы. Раунд окончен.', 8000);
   });
 
   window.addEventListener('resize', () => {
@@ -108,6 +125,7 @@ export function startGame(session) {
 
     player.update(delta);
     remotePlayers.tick(delta);
+    entity.tick(delta);
     for (const gen of generatorTickers) gen.tick(delta, player.getPosition());
 
     sendTimer += delta;

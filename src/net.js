@@ -17,8 +17,12 @@ export const net = {
   joinRoom: (code, nickname) => request('join_room', { code, nickname }),
   startGame: () => request('start_game', {}),
   sendMove: (position, rotationY) => socket.emit('player_move', { position, rotationY }),
+  sendFlashlightState: (on) => socket.emit('flashlight_state', { on }),
   onLobbyUpdate: (cb) => socket.on('lobby_update', cb),
   onGameStarted: (cb) => socket.on('game_started', cb),
   onPlayerMoved: (cb) => socket.on('player_moved', cb),
-  onPlayerLeft: (cb) => socket.on('player_left', cb)
+  onPlayerLeft: (cb) => socket.on('player_left', cb),
+  onEntityUpdate: (cb) => socket.on('entity_update', cb),
+  onPlayerCaught: (cb) => socket.on('player_caught', cb),
+  onGameOver: (cb) => socket.on('game_over', cb)
 };

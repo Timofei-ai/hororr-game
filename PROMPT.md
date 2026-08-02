@@ -94,7 +94,12 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
 - ✅ Stage 3 — done (fog-filled level, ambient audio hook, inventory bar, 3
   collectible items + 2 repairable generators with a stand-still timed repair,
   objectives progress panel, exit door that visually unlocks on completion).
-- ⬜ Stage 4 — entity AI.
+- ✅ Stage 4 — done (server-authoritative entity: patrols waypoints, detects
+  players by proximity with bonuses for an on flashlight and for moving,
+  chases and catches within range. Caught player is frozen with a red
+  "ВАС ПОЙМАЛИ" overlay; other clients see them dim in the HUD and in 3D.
+  All-caught triggers a lose toast. Chose "frozen spectator" over "rescue"
+  for the catch outcome, per the prompt's "your call" on this mechanic).
 - ⬜ Stage 5 — hallucination system.
 - ⬜ Stage 6 — jumpscares.
 

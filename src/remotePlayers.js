@@ -44,7 +44,7 @@ export function createRemotePlayerManager(scene) {
     group.add(makeNameSprite(nickname, colorInt));
 
     scene.add(group);
-    players.set(id, { group, target: group.position.clone(), targetRotY: 0 });
+    players.set(id, { group, body, target: group.position.clone(), targetRotY: 0 });
   }
 
   function updateTarget(id, position, rotationY) {
@@ -62,6 +62,12 @@ export function createRemotePlayerManager(scene) {
     players.delete(id);
   }
 
+  function setEliminated(id) {
+    const p = players.get(id);
+    if (!p) return;
+    p.body.material.color.set(0x333333);
+  }
+
   function tick(delta) {
     const lerpFactor = Math.min(1, delta * 10);
     for (const p of players.values()) {
@@ -70,5 +76,5 @@ export function createRemotePlayerManager(scene) {
     }
   }
 
-  return { addPlayer, removePlayer, updateTarget, tick };
+  return { addPlayer, removePlayer, updateTarget, tick, setEliminated };
 }

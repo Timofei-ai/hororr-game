@@ -38,7 +38,15 @@ export function createPlayer({ camera, domElement, scene, roomHalfExtents, spawn
   const halfW = roomHalfExtents.width;
   const halfD = roomHalfExtents.depth;
 
+  let frozen = false;
+  function setFrozen(value) {
+    frozen = value;
+    if (frozen) controls.unlock();
+  }
+
   function update(delta) {
+    if (frozen) return;
+
     velocity.x -= velocity.x * DAMPING * delta;
     velocity.z -= velocity.z * DAMPING * delta;
 
@@ -65,6 +73,7 @@ export function createPlayer({ camera, domElement, scene, roomHalfExtents, spawn
     update,
     getPosition: () => playerObject.position,
     registerInteractable: interactions.register,
-    unregisterInteractable: interactions.unregister
+    unregisterInteractable: interactions.unregister,
+    setFrozen
   };
 }

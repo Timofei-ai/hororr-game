@@ -1,3 +1,5 @@
+import { createEntity } from './entity.js';
+
 const MAX_PLAYERS = 5;
 
 // Цвет назначается по порядку подключения — так игроков легко различать.
@@ -9,7 +11,10 @@ export const PLAYER_COLORS = [
   0xcc77ff  // фиолетовый
 ];
 
-const rooms = new Map(); // code -> { hostId, players: Map(socketId -> {nickname, color}), started }
+// code -> { hostId, started, entity, players: Map(socketId -> {
+//   nickname, color, position, lastPosition, flashlightOn, eliminated
+// }) }
+const rooms = new Map();
 
 function generateCode() {
   let code;
@@ -24,14 +29,19 @@ function serializeRoom(room, code) {
     code,
     hostId: room.hostId,
     started: room.started,
-    players: [...room.players.entries()].map(([id, p]) => ({ id, nickname: p.nickname, color: p.color }))
+    players: [...room.players.entries()].map(([id, p]) => ({ id, nickname: p.nickname, color: p.color })),
+    entity: room.started ? { position: room.entity.position, state: room.entity.state } : null
   };
+}
+
+function makePlayer(nickname, color) {
+  return { nickname, color, position: null, lastPosition: null, flashlightOn: false, eliminated: false };
 }
 
 export function createRoom(nickname, socketId) {
   const code = generateCode();
-  const room = { hostId: socketId, players: new Map(), started: false };
-  room.players.set(socketId, { nickname, color: PLAYER_COLORS[0] });
+  const room = { hostId: socketId, players: new Map(), started: false, entity: null };
+  room.players.set(socketId, makePlayer(nickname, PLAYER_COLORS[0]));
   rooms.set(code, room);
   return serializeRoom(room, code);
 }
@@ -42,7 +52,7 @@ export function joinRoom(code, nickname, socketId) {
   if (room.started) return { error: 'Игра в этой комнате уже началась' };
   if (room.players.size >= MAX_PLAYERS) return { error: 'Комната заполнена' };
 
-  room.players.set(socketId, { nickname, color: PLAYER_COLORS[room.players.size % PLAYER_COLORS.length] });
+  room.players.set(socketId, makePlayer(nickname, PLAYER_COLORS[room.players.size % PLAYER_COLORS.length]));
   return { room: serializeRoom(room, code) };
 }
 
@@ -52,6 +62,7 @@ export function startRoom(code, socketId) {
   if (room.hostId !== socketId) return { error: 'Только хост может начать игру' };
   if (room.players.size < 2) return { error: 'Нужен хотя бы ещё один игрок' };
   room.started = true;
+  room.entity = createEntity();
   return { room: serializeRoom(room, code) };
 }
 
@@ -60,6 +71,28 @@ export function findRoomBySocket(socketId) {
     if (room.players.has(socketId)) return { code, room };
   }
   return null;
+}
+
+export function updatePlayerPosition(socketId, position) {
+  const found = findRoomBySocket(socketId);
+  if (!found) return;
+  const player = found.room.players.get(socketId);
+  player.lastPosition = player.position;
+  player.position = position;
+}
+
+export function setPlayerFlashlight(socketId, on) {
+  const found = findRoomBySocket(socketId);
+  if (!found) return;
+  found.room.players.get(socketId).flashlightOn = on;
+}
+
+export function markPlayerCaught(socketId) {
+  const found = findRoomBySocket(socketId);
+  if (!found) return null;
+  found.room.players.get(socketId).eliminated = true;
+  const alive = [...found.room.players.values()].filter((p) => !p.eliminated);
+  return { code: found.code, allCaught: alive.length === 0 };
 }
 
 export function leaveRoom(socketId) {
@@ -81,4 +114,10 @@ export function leaveRoom(socketId) {
 export function getRoom(code) {
   const room = rooms.get(code);
   return room ? serializeRoom(room, code) : null;
+}
+
+export function forEachStartedRoom(callback) {
+  for (const [code, room] of rooms.entries()) {
+    if (room.started) callback(code, room);
+  }
 }

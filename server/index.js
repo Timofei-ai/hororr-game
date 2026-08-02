@@ -3,7 +3,13 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRoom, joinRoom, startRoom, leaveRoom } from './rooms.js';
+import {
+  createRoom, joinRoom, startRoom, leaveRoom,
+  updatePlayerPosition, setPlayerFlashlight, markPlayerCaught, forEachStartedRoom
+} from './rooms.js';
+import { tickEntity, distance2D, MOVING_THRESHOLD } from './entity.js';
+
+const ENTITY_TICK_MS = 100;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
@@ -58,7 +64,12 @@ io.on('connection', (socket) => {
   socket.on('player_move', ({ position, rotationY }) => {
     const found = [...socket.rooms].find((code) => code !== socket.id);
     if (!found) return;
+    updatePlayerPosition(socket.id, { x: position[0], y: position[1], z: position[2] });
     socket.to(found).emit('player_moved', { id: socket.id, position, rotationY });
+  });
+
+  socket.on('flashlight_state', ({ on }) => {
+    setPlayerFlashlight(socket.id, Boolean(on));
   });
 
   socket.on('disconnect', () => {
@@ -71,6 +82,28 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+setInterval(() => {
+  const dt = ENTITY_TICK_MS / 1000;
+  forEachStartedRoom((code, room) => {
+    const players = [...room.players.entries()].map(([id, p]) => ({
+      id,
+      position: p.position,
+      flashlightOn: p.flashlightOn,
+      eliminated: p.eliminated,
+      moving: p.position && p.lastPosition ? distance2D(p.position, p.lastPosition) > MOVING_THRESHOLD : false
+    }));
+
+    const result = tickEntity(room.entity, players, dt);
+    io.to(code).emit('entity_update', { position: room.entity.position, state: room.entity.state });
+
+    if (result?.caughtId) {
+      const caught = markPlayerCaught(result.caughtId);
+      io.to(code).emit('player_caught', { id: result.caughtId });
+      if (caught?.allCaught) io.to(code).emit('game_over', { result: 'lose' });
+    }
+  });
+}, ENTITY_TICK_MS);
 
 httpServer.listen(PORT, () => {
   console.log(`[server] listening on http://localhost:${PORT}`);
