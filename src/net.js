@@ -24,5 +24,6 @@ export const net = {
   onPlayerLeft: (cb) => socket.on('player_left', cb),
   onEntityUpdate: (cb) => socket.on('entity_update', cb),
   onPlayerCaught: (cb) => socket.on('player_caught', cb),
-  onGameOver: (cb) => socket.on('game_over', cb)
+  onGameOver: (cb) => socket.on('game_over', cb),
+  onHallucination: (cb) => socket.on('hallucination', cb)
 };

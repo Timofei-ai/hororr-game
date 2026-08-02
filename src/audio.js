@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 
-// Фоновый эмбиент по кругу. Если файла ещё нет в public/audio/ambient/ —
-// просто тихо пропускаем, игра не ломается.
-export function startAmbientAudio(camera) {
+export function createAudioListener(camera) {
   const listener = new THREE.AudioListener();
   camera.add(listener);
+  return listener;
+}
 
+// Фоновый эмбиент по кругу. Если файла ещё нет в public/audio/ambient/ —
+// просто тихо пропускаем, игра не ломается.
+export function startAmbientAudio(listener) {
   const sound = new THREE.Audio(listener);
   const loader = new THREE.AudioLoader();
   loader.load(

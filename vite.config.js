@@ -10,7 +10,8 @@ export default defineConfig({
       '/socket.io': {
         target: 'http://localhost:3001',
         ws: true
-      }
+      },
+      '/api': 'http://localhost:3001'
     }
   },
   build: {

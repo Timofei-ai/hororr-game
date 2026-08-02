@@ -100,6 +100,13 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
   "ВАС ПОЙМАЛИ" overlay; other clients see them dim in the HUD and in 3D.
   All-caught triggers a lose toast. Chose "frozen spectator" over "rescue"
   for the catch outcome, per the prompt's "your call" on this mechanic).
+- ✅ Stage 5 — done (server decides who hallucinates and sends it only to
+  that socket, more often when alone or the entity is near: a fake monster
+  snaps into view near you for a few seconds, a phantom teammate who isn't
+  really there, walls "breathe" via camera FOV pulsing + a hue/contrast
+  filter, or a whisper plays only for you from public/audio/hallucinations/
+  — auto-discovered via a server endpoint, any filename works, no files yet
+  means that one type silently no-ops).
 - ⬜ Stage 5 — hallucination system.
 - ⬜ Stage 6 — jumpscares.
 

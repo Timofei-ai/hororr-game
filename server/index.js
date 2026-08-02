@@ -3,11 +3,13 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readdirSync } from 'node:fs';
 import {
   createRoom, joinRoom, startRoom, leaveRoom,
   updatePlayerPosition, setPlayerFlashlight, markPlayerCaught, forEachStartedRoom
 } from './rooms.js';
 import { tickEntity, distance2D, MOVING_THRESHOLD } from './entity.js';
+import { tickHallucinations } from './hallucinations.js';
 
 const ENTITY_TICK_MS = 100;
 
@@ -17,6 +19,19 @@ const PORT = process.env.PORT || 3001;
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
+
+function listPublicMedia(relDir) {
+  const dir = path.join(__dirname, '..', 'public', relDir);
+  try {
+    return readdirSync(dir).filter((f) => /\.(mp3|wav|png|jpg|jpeg)$/i.test(f));
+  } catch {
+    return [];
+  }
+}
+
+// Отдаёт список файлов, которые реально лежат в public/... — так клиент
+// подхватывает любые файлы, добавленные пользователем, без переименования.
+app.get('/api/hallucination-sounds', (req, res) => res.json(listPublicMedia('audio/hallucinations')));
 
 // В продакшене отдаём собранный клиент (npm run build -> dist/).
 // В разработке фронтом занимается Vite (npm run dev:client) на другом порту.
@@ -102,6 +117,8 @@ setInterval(() => {
       io.to(code).emit('player_caught', { id: result.caughtId });
       if (caught?.allCaught) io.to(code).emit('game_over', { result: 'lose' });
     }
+
+    tickHallucinations(io, room, ENTITY_TICK_MS);
   });
 }, ENTITY_TICK_MS);
 

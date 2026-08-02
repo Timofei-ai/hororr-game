@@ -10,8 +10,9 @@ import { createObjectives } from './objectives.js';
 import { createItemPickup } from './pickups.js';
 import { createGeneratorRepair } from './generators.js';
 import { showToast } from './toast.js';
-import { startAmbientAudio } from './audio.js';
+import { createAudioListener, startAmbientAudio } from './audio.js';
 import { createEntityRenderer } from './entity.js';
+import { createHallucinationSystem } from './hallucinations.js';
 
 const MOVE_SEND_INTERVAL = 1 / 20; // 20 обновлений позиции в секунду достаточно для плавности
 const EYE_HEIGHT = 1.6;
@@ -36,7 +37,8 @@ export function startGame(session) {
     spawn: new THREE.Vector3(0, EYE_HEIGHT, ROOM_SIZE.depth / 2 - 2)
   });
   document.getElementById('blocker').classList.remove('hidden');
-  player.controls.addEventListener('lock', () => startAmbientAudio(camera), { once: true });
+  const audioListener = createAudioListener(camera);
+  player.controls.addEventListener('lock', () => startAmbientAudio(audioListener), { once: true });
 
   const inventory = createInventory();
   const objectives = createObjectives({
@@ -88,6 +90,7 @@ export function startGame(session) {
 
   const hud = createHud(session.players, session.selfId);
   const entity = createEntityRenderer(scene);
+  const hallucinations = createHallucinationSystem({ scene, camera, renderer, remotePlayers, audioListener });
 
   net.onPlayerMoved(({ id, position, rotationY }) => {
     remotePlayers.updateTarget(id, position, rotationY);
@@ -96,6 +99,7 @@ export function startGame(session) {
     remotePlayers.removePlayer(id);
   });
   net.onEntityUpdate((payload) => entity.setState(payload));
+  net.onHallucination((payload) => hallucinations.handle(payload));
   net.onPlayerCaught(({ id }) => {
     hud.setEliminated(id, true);
     if (id === session.selfId) {
@@ -126,6 +130,7 @@ export function startGame(session) {
     player.update(delta);
     remotePlayers.tick(delta);
     entity.tick(delta);
+    hallucinations.tick(delta);
     for (const gen of generatorTickers) gen.tick(delta, player.getPosition());
 
     sendTimer += delta;

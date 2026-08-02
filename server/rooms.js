@@ -35,7 +35,10 @@ function serializeRoom(room, code) {
 }
 
 function makePlayer(nickname, color) {
-  return { nickname, color, position: null, lastPosition: null, flashlightOn: false, eliminated: false };
+  return {
+    nickname, color, position: null, lastPosition: null,
+    flashlightOn: false, eliminated: false, hallucinationCooldown: 0
+  };
 }
 
 export function createRoom(nickname, socketId) {

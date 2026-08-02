@@ -55,6 +55,13 @@ export function createRemotePlayerManager(scene) {
     p.targetRotY = rotationY;
   }
 
+  function snapPosition(id, position) {
+    const p = players.get(id);
+    if (!p) return;
+    p.group.position.set(position.x, position.y, position.z);
+    p.target.copy(p.group.position);
+  }
+
   function removePlayer(id) {
     const p = players.get(id);
     if (!p) return;
@@ -76,5 +83,5 @@ export function createRemotePlayerManager(scene) {
     }
   }
 
-  return { addPlayer, removePlayer, updateTarget, tick, setEliminated };
+  return { addPlayer, removePlayer, updateTarget, tick, setEliminated, snapPosition };
 }
