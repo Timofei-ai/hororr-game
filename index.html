@@ -135,6 +135,54 @@
       }
       #hud-playerlist.visible { display: block; }
       #hud-playerlist li.eliminated { opacity: 0.4; text-decoration: line-through; }
+
+      #objectives-panel {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid #444;
+        padding: 8px 12px;
+        border-radius: 4px;
+        z-index: 6;
+        font-size: 0.9em;
+        line-height: 1.5;
+      }
+
+      #inventory-bar {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 6;
+      }
+      .inv-chip {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid #555;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        white-space: nowrap;
+      }
+
+      #toast {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.75);
+        border: 1px solid #888;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 15;
+        font-size: 1em;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+      #toast.visible { opacity: 1; }
     </style>
   </head>
   <body>
@@ -186,6 +234,9 @@
       <div id="hud-playerlist">
         <ul id="hud-player-list"></ul>
       </div>
+      <div id="objectives-panel"></div>
+      <div id="inventory-bar"></div>
+      <div id="toast"></div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

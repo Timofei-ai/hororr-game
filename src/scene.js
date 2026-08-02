@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 
-// Комната Stage 1: просто закрытая коробка с туманом, чтобы было тесно и темно.
-export const ROOM_SIZE = { width: 14, depth: 20, height: 3.5 };
+// Уровень Stage 3: одна большая тёмная комната (без внутренних стен — своей
+// системы столкновений со стенами пока нет, поэтому лабиринт из коридоров
+// выглядел бы как проходимый насквозь "баг"). Здесь пока важнее инвентарь и
+// цели, чем архитектура — разветвлённая карта появится, когда будет реальная
+// физика столкновений.
+export const ROOM_SIZE = { width: 16, depth: 22, height: 3.5 };
 
 export function createRoom() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000000, 0.09);
+  scene.fog = new THREE.FogExp2(0x000000, 0.08);
 
   const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
   const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 1 });
@@ -46,7 +50,7 @@ export function createRoom() {
 }
 
 // Стол со стартовым фонариком у одной из стен.
-export function createFlashlightPickup(scene) {
+export function createFlashlightPickup(scene, position) {
   const group = new THREE.Group();
 
   const tableTop = new THREE.Mesh(
@@ -78,8 +82,70 @@ export function createFlashlightPickup(scene) {
   flashlight.position.set(0, 0.95, 0);
   group.add(flashlight);
 
-  group.position.set(0, 0, -ROOM_SIZE.depth / 2 + 1.5);
+  group.position.copy(position);
   scene.add(group);
 
   return { group, flashlightMesh: flashlight };
+}
+
+// Небольшой светящийся предмет-цель (например, предохранитель) для подбора.
+export function createPickupProp(scene, position) {
+  const mesh = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.22, 0),
+    new THREE.MeshStandardMaterial({ color: 0xffcc44, emissive: 0x553300, emissiveIntensity: 0.6 })
+  );
+  mesh.position.copy(position);
+  mesh.position.y = 0.5;
+  scene.add(mesh);
+  return mesh;
+}
+
+// Генератор с индикатором состояния (красный = не починен, зелёный = починен).
+export function createGeneratorProp(scene, position) {
+  const group = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(0.9, 1.1, 0.7),
+    new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7, metalness: 0.3 })
+  );
+  body.position.y = 0.55;
+  group.add(body);
+
+  const indicator = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0xff3333, emissive: 0xff0000, emissiveIntensity: 1 })
+  );
+  indicator.position.set(0, 1.0, 0.36);
+  group.add(indicator);
+
+  group.position.copy(position);
+  scene.add(group);
+
+  return {
+    group,
+    setRepaired(repaired) {
+      indicator.material.color.set(repaired ? 0x33ff66 : 0xff3333);
+      indicator.material.emissive.set(repaired ? 0x00ff33 : 0xff0000);
+    }
+  };
+}
+
+// Дверь выхода — пока чисто визуальный индикатор прогресса целей
+// (физически проходу не мешает: коллизий со стенами/дверьми ещё нет).
+export function createExitDoor(scene, position, facingRotationY) {
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 2.4),
+    new THREE.MeshStandardMaterial({ color: 0x881111, emissive: 0x330000, side: THREE.DoubleSide })
+  );
+  mesh.position.copy(position);
+  mesh.rotation.y = facingRotationY;
+  scene.add(mesh);
+
+  return {
+    mesh,
+    setUnlocked(unlocked) {
+      mesh.material.color.set(unlocked ? 0x11aa44 : 0x881111);
+      mesh.material.emissive.set(unlocked ? 0x004411 : 0x330000);
+    }
+  };
 }

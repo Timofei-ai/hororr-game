@@ -91,7 +91,9 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
 - ✅ Stage 2 — done (nickname + Roblox-style lobby, 6-digit room codes, waiting room
   with colored avatars/host tag, network movement sync, in-game name tags that
   billboard toward the camera, corner alive/eliminated player list).
-- ⬜ Stage 3 — level, inventory, objectives.
+- ✅ Stage 3 — done (fog-filled level, ambient audio hook, inventory bar, 3
+  collectible items + 2 repairable generators with a stand-still timed repair,
+  objectives progress panel, exit door that visually unlocks on completion).
 - ⬜ Stage 4 — entity AI.
 - ⬜ Stage 5 — hallucination system.
 - ⬜ Stage 6 — jumpscares.
