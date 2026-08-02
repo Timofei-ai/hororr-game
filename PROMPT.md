@@ -88,8 +88,32 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
 
 **Progress log:**
 - ✅ Stage 1 — done (project skeleton, first-person movement, flashlight pickup).
-- ⬜ Stage 2 — lobby + network sync.
+- ✅ Stage 2 — done (nickname + Roblox-style lobby, 6-digit room codes, waiting room
+  with colored avatars/host tag, network movement sync, in-game name tags that
+  billboard toward the camera, corner alive/eliminated player list).
 - ⬜ Stage 3 — level, inventory, objectives.
 - ⬜ Stage 4 — entity AI.
 - ⬜ Stage 5 — hallucination system.
 - ⬜ Stage 6 — jumpscares.
+
+## Addendum: nickname + lobby system (added after Stage 1, folded into Stage 2)
+
+Add a nickname and lobby system to the game, similar to Roblox:
+
+1. **Nickname Input.** Upon entering the game, the player should see a screen to
+   enter a nickname (up to 16 characters). The nickname must be saved for future
+   sessions.
+2. **Lobby.** After entering the nickname, two buttons appear: "Create Room" (the
+   player becomes the host and gets a 6-digit code to share with friends) and
+   "Join Room" (to enter a friend's code). Inside the lobby, there is a waiting
+   room with a list of all connected players' nicknames. Each player has a
+   distinct colored dot/avatar, the host is clearly marked, and the status says
+   "Waiting for players...". Max capacity is 5 players. The "Start" button is
+   only visible to the host and becomes active when at least 1 other player
+   joins.
+3. **In-Game Nicknames.** During the match, the nickname floats above each
+   character. The name tag must always face the camera (billboard style) and
+   remain visible in the dark at close and medium ranges. Each player is
+   assigned a unique color for easy identification. In the corner of the
+   screen, there should be a small player list showing who is alive and who is
+   eliminated.
