@@ -1,1 +1,1 @@
-# hororr-game
+# horor-game
