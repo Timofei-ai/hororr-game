@@ -35,6 +35,9 @@ function listPublicMedia(relDir) {
 // Отдаёт список файлов, которые реально лежат в public/... — так клиент
 // подхватывает любые файлы, добавленные пользователем, без переименования.
 app.get('/api/hallucination-sounds', (req, res) => res.json(listPublicMedia('audio/hallucinations')));
+app.get('/api/hallucination-images', (req, res) => {
+  res.json(listPublicMedia('hallucinations/images').filter((f) => /\.(png|jpe?g)$/i.test(f)));
+});
 
 // Джампскейры (Stage 6): картинки + звуки берутся из public/jumpscares —
 // пользователь может подкидывать свои файлы без переименования и пересборки.

@@ -224,6 +224,16 @@
       }
       #jumpscare-overlay.visible { display: block; }
 
+      #hallucination-flash-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 26;
+        display: none;
+        background: #000;
+        pointer-events: none;
+      }
+      #hallucination-flash-overlay.visible { display: block; }
+
       #app.screen-shake { animation: jumpscare-shake 0.5s; }
       @keyframes jumpscare-shake {
         0% { transform: translate(0, 0); }
@@ -301,6 +311,7 @@
         </div>
       </div>
       <div id="jumpscare-overlay"></div>
+      <div id="hallucination-flash-overlay"></div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

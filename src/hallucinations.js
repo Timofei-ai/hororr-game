@@ -4,6 +4,7 @@ import { loadMonsterModel, cloneMonsterModel } from './models.js';
 const OBJECT_SWAP_DURATION = 3.5;
 const PHANTOM_DURATION = 4;
 const DISTORTION_DURATION = 2.5;
+const IMAGE_FLASH_DURATION = 700;
 const BASE_FOV = 75;
 // Тот же угол, что и у настоящей сущности (src/entity.js) — иначе призрак
 // монстра стоит в неестественной позе вместо того, чтобы "смотреть" на игрока.
@@ -57,6 +58,8 @@ function createFakeMonster(scene, position, viewerPosition) {
 export function createHallucinationSystem({ scene, camera, renderer, remotePlayers, audioListener }) {
   let distortionTimeLeft = 0;
   const soundBuffers = [];
+  let flashImages = [];
+  const flashOverlay = document.getElementById('hallucination-flash-overlay');
 
   fetch('/api/hallucination-sounds')
     .then((r) => r.json())
@@ -66,6 +69,11 @@ export function createHallucinationSystem({ scene, camera, renderer, remotePlaye
         loader.load(`/audio/hallucinations/${file}`, (buffer) => soundBuffers.push(buffer));
       }
     })
+    .catch(() => {});
+
+  fetch('/api/hallucination-images')
+    .then((r) => r.json())
+    .then((files) => { flashImages = files; })
     .catch(() => {});
 
   function playFakeSound() {
@@ -94,12 +102,31 @@ export function createHallucinationSystem({ scene, camera, renderer, remotePlaye
     renderer.domElement.classList.add('distortion-active');
   }
 
+  // Доля секунды жуткого/странного изображения на весь экран — мгновенно,
+  // без звука и тряски (это не джампскейр, а более "тихий" вид галлюцинации).
+  // Если своих картинок в public/hallucinations/images/ ещё нет — просто
+  // ничего не показываем в этот раз (как и с fake-sound без своих звуков).
+  function spawnImageFlash() {
+    if (flashImages.length === 0 || !flashOverlay) return;
+    const img = document.createElement('img');
+    img.src = `/hallucinations/images/${flashImages[Math.floor(Math.random() * flashImages.length)]}`;
+    img.style.cssText = 'width:100%; height:100%; object-fit: cover;';
+    flashOverlay.innerHTML = '';
+    flashOverlay.appendChild(img);
+    flashOverlay.classList.add('visible');
+    setTimeout(() => {
+      flashOverlay.classList.remove('visible');
+      flashOverlay.innerHTML = '';
+    }, IMAGE_FLASH_DURATION);
+  }
+
   function handle(payload) {
     switch (payload.type) {
       case 'object-swap': spawnObjectSwap(payload.position); break;
       case 'phantom': spawnPhantom(payload); break;
       case 'distortion': triggerDistortion(); break;
       case 'fake-sound': playFakeSound(); break;
+      case 'image-flash': spawnImageFlash(); break;
     }
   }
 

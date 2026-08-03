@@ -1,6 +1,6 @@
 import { distance2D } from './entity.js';
 
-const TYPES = ['object-swap', 'fake-sound', 'distortion', 'phantom'];
+const TYPES = ['object-swap', 'fake-sound', 'distortion', 'phantom', 'image-flash'];
 
 const BASE_CHANCE_PER_TICK = 0.003; // при тике 100мс — в среднем раз в ~33с
 const ALONE_MULTIPLIER = 4;
