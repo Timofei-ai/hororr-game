@@ -103,7 +103,8 @@ export function createHallucinationSystem({ scene, camera, renderer, remotePlaye
   }
 
   // Доля секунды жуткого/странного изображения на весь экран — мгновенно,
-  // без звука и тряски (это не джампскейр, а более "тихий" вид галлюцинации).
+  // с коротким звуком в пару (из public/audio/hallucinations/), но без
+  // тряски экрана (это не джампскейр, а более "тихий" вид галлюцинации).
   // Если своих картинок в public/hallucinations/images/ ещё нет — просто
   // ничего не показываем в этот раз (как и с fake-sound без своих звуков).
   function spawnImageFlash() {
@@ -114,6 +115,7 @@ export function createHallucinationSystem({ scene, camera, renderer, remotePlaye
     flashOverlay.innerHTML = '';
     flashOverlay.appendChild(img);
     flashOverlay.classList.add('visible');
+    playFakeSound();
     setTimeout(() => {
       flashOverlay.classList.remove('visible');
       flashOverlay.innerHTML = '';
