@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readdirSync } from 'node:fs';
 import {
   createRoom, joinRoom, startRoom, leaveRoom,
-  updatePlayerPosition, setPlayerFlashlight, markPlayerCaught, forEachStartedRoom,
+  updatePlayerPosition, setPlayerFlashlight, setPlayerAdmin, markPlayerCaught, forEachStartedRoom,
   collectItem, repairGenerator, useExitDoor
 } from './rooms.js';
 import { tickEntity, distance2D, MOVING_THRESHOLD } from './entity.js';
@@ -89,6 +89,10 @@ io.on('connection', (socket) => {
     setPlayerFlashlight(socket.id, Boolean(on));
   });
 
+  socket.on('set_admin_mode', ({ on }) => {
+    setPlayerAdmin(socket.id, Boolean(on));
+  });
+
   socket.on('collect_item', ({ itemId }) => {
     const result = collectItem(socket.id, itemId);
     if (result) io.to(result.code).emit('item_collected', result);
@@ -130,7 +134,8 @@ setInterval(() => {
       flashlightOn: p.flashlightOn,
       eliminated: p.eliminated,
       moving: p.position && p.lastPosition ? distance2D(p.position, p.lastPosition) > MOVING_THRESHOLD : false,
-      sprinting: p.sprinting
+      sprinting: p.sprinting,
+      admin: p.admin
     }));
 
     const config = LEVELS[room.level] || LEVELS[0];

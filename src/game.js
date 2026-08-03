@@ -45,6 +45,23 @@ export function startGame(session) {
 
   const inventory = createInventory();
 
+  const adminBadge = document.getElementById('admin-badge');
+  let fogDensityBeforeFly = scene.fog.density;
+  player.onFlyModeChange((flying) => {
+    net.setAdminMode(flying);
+    adminBadge.classList.toggle('visible', flying);
+    if (flying) {
+      fogDensityBeforeFly = scene.fog.density;
+      scene.fog.density = 0.01; // в полёте туман почти не мешает осматривать уровень издалека/сверху
+    } else {
+      scene.fog.density = fogDensityBeforeFly;
+    }
+    showToast(
+      flying ? 'Админ-режим: полёт включён, монстр вас не видит' : 'Админ-режим выключен',
+      3500
+    );
+  });
+
   createFlashlightSystem({
     scene, camera, player, inventory,
     position: new THREE.Vector3(0, 0, -ROOM_SIZE.depth / 2 + 1.5),

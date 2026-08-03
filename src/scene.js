@@ -76,9 +76,12 @@ export function createRoom() {
     scene.add(wall);
   }
 
-  // Едва заметный общий свет — без фонарика почти ничего не видно.
-  const ambient = new THREE.AmbientLight(0x1a1a22, 0.15);
+  // Общий фоновый свет — тускло для атмосферы хоррора, но не полностью
+  // чёрный: без фонарика должны быть видны силуэты стен/мебели вблизи.
+  const ambient = new THREE.AmbientLight(0x3a3a45, 0.45);
   scene.add(ambient);
+  const hemi = new THREE.HemisphereLight(0x33384a, 0x0a0a0a, 0.35);
+  scene.add(hemi);
 
   return scene;
 }
@@ -210,29 +213,48 @@ export function createCeilingLamp(scene, position) {
 export async function scatterDecor(scene) {
   const { spawnProp } = await import('./props.js');
 
+  // Мебель расставлена не вразнобой, а логическими зонами — как будто это
+  // реально разные помещения одного отделения больницы, даже без внутренних стен.
   const propSpots = [
-    { name: 'gurney', x: -8, z: -12, rot: 0.3 },
-    { name: 'gurney', x: 8, z: 11, rot: -0.6 },
-    { name: 'wheelchair', x: -9, z: 10, rot: 1.2 },
-    { name: 'wheelchair', x: 9, z: -11, rot: -0.4 },
+    // Зона ожидания (у южного входа, где игроки появляются)
+    { name: 'wheelchair', x: -9, z: 11, rot: 1.2 },
+    { name: 'wheelchair', x: -7.3, z: 12.2, rot: 0.7 },
+    { name: 'gurney', x: -8.6, z: 13.4, rot: 0.3 },
+    { name: 'crutchIvDrip', x: -6.4, z: 10.8, rot: 0.5 },
+
+    // Операционная (центр зала)
+    { name: 'surgerySet', x: 0, z: 5, rot: 0 },
+    { name: 'gurney', x: 1.8, z: 5.6, rot: -0.4 },
+    { name: 'crutchIvDrip', x: -1.8, z: 5.4, rot: 0.6 },
+
+    // Морг (западный угол, ближе к дверям)
     { name: 'morgueCabinet', x: -9.7, z: 2, rot: Math.PI / 2 },
+    { name: 'morgueCabinet', x: -9.7, z: 4.5, rot: Math.PI / 2 },
+    { name: 'corpse', x: -8.7, z: 1.2, rot: 2.0 },
+    { name: 'doubleDoors', x: -10.85, z: -1, rot: Math.PI / 2 },
+
+    // Архив / кабинет персонала (восточная сторона)
     { name: 'hospitalCupboard', x: 9.7, z: -3, rot: -Math.PI / 2 },
-    { name: 'crutchIvDrip', x: -8, z: 6, rot: 0.5 },
-    { name: 'surgerySet', x: 0, z: 6, rot: 0 },
-    { name: 'doubleDoors', x: -10.85, z: -5, rot: Math.PI / 2 },
-    { name: 'corpse', x: -9, z: 13, rot: 2.0 },
-    { name: 'papers', x: -5, z: -11, rot: 0.4 },
-    { name: 'papers', x: 3, z: 9, rot: -0.8 },
-    { name: 'papers', x: -2, z: 3, rot: 1.5 }
+    { name: 'hospitalCupboard', x: 9.7, z: -0.5, rot: -Math.PI / 2 },
+    { name: 'papers', x: 8.4, z: -3.8, rot: 0.4 },
+    { name: 'papers', x: 8.6, z: -1.2, rot: -0.8 },
+    { name: 'papers', x: 9.2, z: -5.5, rot: 1.5 },
+
+    // Переполненный коридор ближе к выходу (север)
+    { name: 'gurney', x: 7, z: -11, rot: -0.6 },
+    { name: 'wheelchair', x: 5.5, z: -10, rot: 1.0 },
+    { name: 'crutchIvDrip', x: 6.5, z: -8, rot: -0.3 }
   ];
   await Promise.all(
     propSpots.map((spot) => spawnProp(scene, spot.name, new THREE.Vector3(spot.x, 0, spot.z), spot.rot))
   );
 
   const lampSpots = [
-    { x: -6, z: -5 },
-    { x: 6, z: 0 },
-    { x: -4, z: 8 }
+    { x: -8, z: 11 },  // зона ожидания
+    { x: 0, z: 2 },    // операционная
+    { x: -9, z: 2 },   // морг
+    { x: 8, z: -3 },   // архив
+    { x: 4, z: -9 }    // коридор к выходу
   ];
   for (const spot of lampSpots) {
     createCeilingLamp(scene, new THREE.Vector3(spot.x, 0, spot.z));

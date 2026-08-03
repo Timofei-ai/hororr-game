@@ -51,7 +51,7 @@ export function createEntity() {
 // speedMultiplier растёт с номером уровня — монстр быстрее на более поздних уровнях.
 // Возвращает { caughtId } если кого-то поймали в этом тике, иначе null.
 export function tickEntity(entity, players, dt, speedMultiplier = 1) {
-  const alive = players.filter((p) => p.position && !p.eliminated);
+  const alive = players.filter((p) => p.position && !p.eliminated && !p.admin);
   const patrolSpeed = PATROL_SPEED * speedMultiplier;
   const chaseSpeed = CHASE_SPEED * speedMultiplier;
 

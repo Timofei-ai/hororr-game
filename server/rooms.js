@@ -42,7 +42,8 @@ function serializeRoom(room, code) {
 function makePlayer(nickname, color) {
   return {
     nickname, color, position: null, lastPosition: null,
-    flashlightOn: false, eliminated: false, hallucinationCooldown: 0, sprinting: false
+    flashlightOn: false, eliminated: false, hallucinationCooldown: 0, sprinting: false,
+    admin: false
   };
 }
 
@@ -98,6 +99,14 @@ export function setPlayerFlashlight(socketId, on) {
   const found = findRoomBySocket(socketId);
   if (!found) return;
   found.room.players.get(socketId).flashlightOn = on;
+}
+
+// Режим админа/наблюдателя (полёт): монстр полностью игнорирует такого
+// игрока — не видит и не может поймать, пока режим включён.
+export function setPlayerAdmin(socketId, admin) {
+  const found = findRoomBySocket(socketId);
+  if (!found) return;
+  found.room.players.get(socketId).admin = admin;
 }
 
 function checkObjectivesComplete(room) {

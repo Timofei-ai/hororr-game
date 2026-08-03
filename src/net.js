@@ -18,6 +18,7 @@ export const net = {
   startGame: () => request('start_game', {}),
   sendMove: (position, rotationY, sprinting) => socket.emit('player_move', { position, rotationY, sprinting }),
   sendFlashlightState: (on) => socket.emit('flashlight_state', { on }),
+  setAdminMode: (on) => socket.emit('set_admin_mode', { on }),
   collectItem: (itemId) => socket.emit('collect_item', { itemId }),
   repairGenerator: (generatorId) => socket.emit('repair_generator', { generatorId }),
   useExitDoor: () => request('use_exit_door', {}),
