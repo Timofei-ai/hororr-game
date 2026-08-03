@@ -30,7 +30,7 @@ export function startGame(session) {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 
   const scene = createRoom();
-  scatterDecor(scene);
+  scatterDecor(scene).catch((err) => console.warn('[decor] не удалось загрузить часть моделей:', err));
 
   const player = createPlayer({
     camera,

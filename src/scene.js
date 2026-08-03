@@ -177,72 +177,6 @@ export function createExitDoor(scene, position, facingRotationY) {
   };
 }
 
-// Больничная каталка — просто декорация для атмосферы.
-function buildGurney() {
-  const group = new THREE.Group();
-  const frameMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.6, roughness: 0.5 });
-  const padMat = new THREE.MeshStandardMaterial({ color: 0x3a3a2a, roughness: 0.9 });
-
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, 1.9), padMat);
-  top.position.y = 0.85;
-  group.add(top);
-
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.05, 1.95), frameMat);
-  frame.position.y = 0.8;
-  group.add(frame);
-
-  const legGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.78, 8);
-  for (const [x, z] of [[0.3, 0.85], [-0.3, 0.85], [0.3, -0.85], [-0.3, -0.85]]) {
-    const leg = new THREE.Mesh(legGeo, frameMat);
-    leg.position.set(x, 0.4, z);
-    group.add(leg);
-  }
-  return group;
-}
-
-// Ржавый шкаф/тумба.
-function buildCabinet() {
-  const group = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.8, 1.6, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0x2a3228, roughness: 0.85, metalness: 0.2 })
-  );
-  body.position.y = 0.8;
-  group.add(body);
-
-  const handle = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 0.05, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.7 })
-  );
-  handle.position.set(0.3, 1.0, 0.27);
-  group.add(handle);
-  return group;
-}
-
-// Опрокинутая инвалидная коляска — просто хлам на полу.
-function buildDebris() {
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9, metalness: 0.3 });
-  const box = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.7), mat);
-  box.rotation.z = Math.PI / 3;
-  box.position.y = 0.2;
-  group.add(box);
-  return group;
-}
-
-const CLUTTER_BUILDERS = { gurney: buildGurney, cabinet: buildCabinet, debris: buildDebris };
-
-// Разбрасывает декоративный хлам по уровню — чисто визуальное, без коллизий
-// и без взаимодействия. type: 'gurney' | 'cabinet' | 'debris'.
-export function createClutterProp(scene, position, type, rotationY = 0) {
-  const build = CLUTTER_BUILDERS[type] || CLUTTER_BUILDERS.debris;
-  const group = build();
-  group.position.copy(position);
-  group.rotation.y = rotationY;
-  scene.add(group);
-  return group;
-}
-
 // Тусклый потолочный светильник — просто для атмосферы и лёгкой заполненности
 // пространства (комната больше не полностью чёрная в паре мест).
 export function createCeilingLamp(scene, position) {
@@ -271,19 +205,29 @@ export function createCeilingLamp(scene, position) {
   return group;
 }
 
-// Статичное убранство комнаты — не зависит от уровня, расставляется один раз.
-export function scatterDecor(scene) {
-  const clutterSpots = [
-    { type: 'gurney', x: -6, z: -3, rot: 0.3 },
-    { type: 'gurney', x: 5, z: 4, rot: -0.6 },
-    { type: 'cabinet', x: -9.5, z: -10, rot: Math.PI / 2 },
-    { type: 'cabinet', x: 9.5, z: 8, rot: -Math.PI / 2 },
-    { type: 'debris', x: 2, z: -7, rot: 0.8 },
-    { type: 'debris', x: -3, z: 8, rot: -1.1 }
+// Статичное убранство комнаты — не зависит от уровня, расставляется один раз
+// из настоящих моделей (см. src/props.js) поверх процедурных потолочных ламп.
+export async function scatterDecor(scene) {
+  const { spawnProp } = await import('./props.js');
+
+  const propSpots = [
+    { name: 'gurney', x: -8, z: -12, rot: 0.3 },
+    { name: 'gurney', x: 8, z: 11, rot: -0.6 },
+    { name: 'wheelchair', x: -9, z: 10, rot: 1.2 },
+    { name: 'wheelchair', x: 9, z: -11, rot: -0.4 },
+    { name: 'morgueCabinet', x: -9.7, z: 2, rot: Math.PI / 2 },
+    { name: 'hospitalCupboard', x: 9.7, z: -3, rot: -Math.PI / 2 },
+    { name: 'crutchIvDrip', x: -8, z: 6, rot: 0.5 },
+    { name: 'surgerySet', x: 0, z: 6, rot: 0 },
+    { name: 'doubleDoors', x: -10.85, z: -5, rot: Math.PI / 2 },
+    { name: 'corpse', x: -9, z: 13, rot: 2.0 },
+    { name: 'papers', x: -5, z: -11, rot: 0.4 },
+    { name: 'papers', x: 3, z: 9, rot: -0.8 },
+    { name: 'papers', x: -2, z: 3, rot: 1.5 }
   ];
-  for (const spot of clutterSpots) {
-    createClutterProp(scene, new THREE.Vector3(spot.x, 0, spot.z), spot.type, spot.rot);
-  }
+  await Promise.all(
+    propSpots.map((spot) => spawnProp(scene, spot.name, new THREE.Vector3(spot.x, 0, spot.z), spot.rot))
+  );
 
   const lampSpots = [
     { x: -6, z: -5 },

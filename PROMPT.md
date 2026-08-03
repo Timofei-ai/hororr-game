@@ -129,7 +129,23 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
   "noise" for entity detection) and brightened the flashlight substantially
   (Three's physically-correct lighting made the earlier value too dim) plus
   ACES tone mapping so close-range light doesn't clip to flat white.
-- ⬜ Stage 5 — hallucination system.
+- ✅ Non-emissive pickups/generators — items and the generator's status light
+  were self-illuminated (emissive), making them visible as glowing beacons
+  even without a flashlight. Switched both to plain non-emissive materials
+  per the user's request, so finding them actually requires searching in
+  the dark with a light source.
+- ✅ Real furniture pack — user supplied a set of hospital-themed CC-BY-4.0
+  models (gurney, wheelchair, morgue cabinet, hospital cupboard, crutch + IV
+  drip, a fluorescent light fixture, rusted double doors, a standing
+  "corpse"/silent figure, a paper stack) replacing the earlier procedural
+  box-shaped clutter. Also received a "surgery set" prop (CC-BY-NC-SA-4.0 —
+  non-commercial only, flagged in CREDITS.md) and skipped one "papers" model
+  with a non-free Sketchfab Standard license in favor of a CC-BY alternative
+  the user also provided. Notable debugging detour: raw glTF accessor bounds
+  (read directly from the binary JSON chunk) do NOT reflect a mesh node's own
+  transform, so trusting them to guess "wrong up-axis" fixes was actively
+  wrong for every model in this pack — all of them were already correctly
+  oriented by GLTFLoader with zero extra rotation needed.
 - ⬜ Stage 6 — jumpscares.
 
 ## Addendum: nickname + lobby system (added after Stage 1, folded into Stage 2)
