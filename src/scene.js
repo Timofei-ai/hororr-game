@@ -136,23 +136,15 @@ export function createPickupProp(scene, position) {
   return mesh;
 }
 
-// Генератор с индикатором состояния (красный = не починен, зелёный = починен).
+// Генератор — без светящегося индикатора (его тоже нужно искать в темноте).
+// Статус "починен" виден только вблизи, под фонариком, по цвету корпуса.
 export function createGeneratorProp(scene, position) {
   const group = new THREE.Group();
 
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.9, 1.1, 0.7),
-    new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7, metalness: 0.3 })
-  );
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7, metalness: 0.3 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.7), bodyMaterial);
   body.position.y = 0.55;
   group.add(body);
-
-  const indicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 12, 12),
-    new THREE.MeshStandardMaterial({ color: 0xff3333, emissive: 0xff0000, emissiveIntensity: 1 })
-  );
-  indicator.position.set(0, 1.0, 0.36);
-  group.add(indicator);
 
   group.position.copy(position);
   scene.add(group);
@@ -160,8 +152,7 @@ export function createGeneratorProp(scene, position) {
   return {
     group,
     setRepaired(repaired) {
-      indicator.material.color.set(repaired ? 0x33ff66 : 0xff3333);
-      indicator.material.emissive.set(repaired ? 0x00ff33 : 0xff0000);
+      bodyMaterial.color.set(repaired ? 0x2a4a33 : 0x333333);
     }
   };
 }
