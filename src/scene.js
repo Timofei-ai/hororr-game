@@ -122,11 +122,13 @@ export function createFlashlightPickup(scene, position) {
   return { group, flashlightMesh: flashlight };
 }
 
-// Небольшой светящийся предмет-цель (например, предохранитель) для подбора.
+// Небольшой предмет-цель (например, предохранитель) для подбора. Специально
+// без свечения — его не должно быть видно в темноте без фонарика, чтобы
+// предметы приходилось реально искать, а не идти на маячок.
 export function createPickupProp(scene, position) {
   const mesh = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.22, 0),
-    new THREE.MeshStandardMaterial({ color: 0xffcc44, emissive: 0x553300, emissiveIntensity: 0.6 })
+    new THREE.OctahedronGeometry(0.2, 0),
+    new THREE.MeshStandardMaterial({ color: 0x8a7a4a, roughness: 0.6, metalness: 0.4 })
   );
   mesh.position.copy(position);
   mesh.position.y = 0.5;
