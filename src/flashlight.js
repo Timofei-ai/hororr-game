@@ -19,7 +19,7 @@ export function createFlashlightSystem({ scene, camera, player, inventory, posit
     pickup.group.visible = false;
     inventory.addItem({ label: 'Фонарик', icon: '🔦' });
 
-    spotlight = new THREE.SpotLight(0xfff2cc, 6, 14, Math.PI / 7, 0.4, 1.5);
+    spotlight = new THREE.SpotLight(0xfff2cc, 120, 14, Math.PI / 7, 0.4, 1.5);
     spotlight.position.set(0, 0, 0);
     const target = new THREE.Object3D();
     target.position.set(0, 0, -1);

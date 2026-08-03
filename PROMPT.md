@@ -107,6 +107,14 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
   filter, or a whisper plays only for you from public/audio/hallucinations/
   — auto-discovered via a server endpoint, any filename works, no files yet
   means that one type silently no-ops).
+- ✅ Real monster model swapped in — user supplied `monster.glb` (a Draco-
+  compressed werewolf), used for both the real entity and the "object-swap"
+  hallucination in place of the placeholder capsule. Had to add DRACOLoader
+  (the file uses Draco mesh compression), strip a display-pedestal mesh the
+  source file included, auto-scale/recentre/ground it, and bump light
+  intensities — Three.js r155+ uses physically-correct light units, so the
+  old placeholder intensities (~6) were nearly invisible. See CREDITS.md for
+  the model's CC-BY-4.0 attribution.
 - ⬜ Stage 5 — hallucination system.
 - ⬜ Stage 6 — jumpscares.
 

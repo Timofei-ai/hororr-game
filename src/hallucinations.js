@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import { loadMonsterModel, cloneMonsterModel } from './models.js';
 
 const OBJECT_SWAP_DURATION = 3.5;
 const PHANTOM_DURATION = 4;
 const DISTORTION_DURATION = 2.5;
 const BASE_FOV = 75;
 
-function createFakeMonster(scene, position) {
+function createPlaceholderMonster() {
   const group = new THREE.Group();
   const body = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.35, 1.5, 4, 8),
@@ -21,9 +22,25 @@ function createFakeMonster(scene, position) {
   eyeL.position.set(-0.1, 1.75, 0.28);
   eyeR.position.set(0.1, 1.75, 0.28);
   group.add(eyeL, eyeR);
+  return group;
+}
 
+// "Подмена объекта": на месте, где ничего нет, на пару секунд появляется
+// монстр — берём тот же клон модели, что и настоящая сущность, чтобы жертва
+// на миг не могла отличить призрака от реального монстра.
+function createFakeMonster(scene, position) {
+  const group = new THREE.Group();
   group.position.set(position.x, 0, position.z);
+  group.add(createPlaceholderMonster());
   scene.add(group);
+
+  loadMonsterModel()
+    .then((template) => {
+      group.clear();
+      group.add(cloneMonsterModel(template));
+    })
+    .catch(() => {});
+
   return group;
 }
 
