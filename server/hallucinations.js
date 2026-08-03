@@ -26,8 +26,9 @@ function buildPayload(type, player, others) {
 }
 
 // Каждый тик решаем, у кого из живых игроков "срывает" реальность — персонально,
-// сервер отправляет событие только этому одному сокету.
-export function tickHallucinations(io, room, dtMs) {
+// сервер отправляет событие только этому одному сокету. chanceMultiplier растёт
+// с номером уровня — чем дальше, тем чаще накрывает.
+export function tickHallucinations(io, room, dtMs, chanceMultiplier = 1) {
   const alive = [...room.players.entries()].filter(([, p]) => !p.eliminated && p.position);
 
   for (const [id, p] of alive) {
@@ -38,7 +39,7 @@ export function tickHallucinations(io, room, dtMs) {
     const isAlone = others.every(([, o]) => distance2D(p.position, o.position) > ALONE_RADIUS);
     const entityNear = room.entity && distance2D(p.position, room.entity.position) <= ENTITY_NEAR_RADIUS;
 
-    let chance = BASE_CHANCE_PER_TICK;
+    let chance = BASE_CHANCE_PER_TICK * chanceMultiplier;
     if (isAlone) chance *= ALONE_MULTIPLIER;
     if (entityNear) chance *= ENTITY_NEAR_MULTIPLIER;
 

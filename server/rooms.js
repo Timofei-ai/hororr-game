@@ -1,4 +1,5 @@
 import { createEntity } from './entity.js';
+import { LEVELS } from '../levels.js';
 
 const MAX_PLAYERS = 5;
 
@@ -30,14 +31,18 @@ function serializeRoom(room, code) {
     hostId: room.hostId,
     started: room.started,
     players: [...room.players.entries()].map(([id, p]) => ({ id, nickname: p.nickname, color: p.color })),
-    entity: room.started ? { position: room.entity.position, state: room.entity.state } : null
+    entity: room.started ? { position: room.entity.position, state: room.entity.state } : null,
+    level: room.level || 0,
+    collectedItems: room.started ? [...room.collectedItems] : [],
+    repairedGenerators: room.started ? [...room.repairedGenerators] : [],
+    objectivesComplete: room.started ? room.objectivesComplete : false
   };
 }
 
 function makePlayer(nickname, color) {
   return {
     nickname, color, position: null, lastPosition: null,
-    flashlightOn: false, eliminated: false, hallucinationCooldown: 0
+    flashlightOn: false, eliminated: false, hallucinationCooldown: 0, sprinting: false
   };
 }
 
@@ -66,6 +71,10 @@ export function startRoom(code, socketId) {
   if (room.players.size < 2) return { error: 'Нужен хотя бы ещё один игрок' };
   room.started = true;
   room.entity = createEntity();
+  room.level = 0;
+  room.collectedItems = new Set();
+  room.repairedGenerators = new Set();
+  room.objectivesComplete = false;
   return { room: serializeRoom(room, code) };
 }
 
@@ -76,18 +85,83 @@ export function findRoomBySocket(socketId) {
   return null;
 }
 
-export function updatePlayerPosition(socketId, position) {
+export function updatePlayerPosition(socketId, position, sprinting) {
   const found = findRoomBySocket(socketId);
   if (!found) return;
   const player = found.room.players.get(socketId);
   player.lastPosition = player.position;
   player.position = position;
+  player.sprinting = Boolean(sprinting);
 }
 
 export function setPlayerFlashlight(socketId, on) {
   const found = findRoomBySocket(socketId);
   if (!found) return;
   found.room.players.get(socketId).flashlightOn = on;
+}
+
+function checkObjectivesComplete(room) {
+  const config = LEVELS[room.level];
+  if (room.collectedItems.size >= config.items.length && room.repairedGenerators.size >= config.generators.length) {
+    room.objectivesComplete = true;
+  }
+}
+
+export function collectItem(socketId, itemId) {
+  const found = findRoomBySocket(socketId);
+  if (!found || !found.room.started) return null;
+  const { code, room } = found;
+  const config = LEVELS[room.level];
+  if (!config.items.some((i) => i.id === itemId)) return null;
+
+  room.collectedItems.add(itemId);
+  checkObjectivesComplete(room);
+  return {
+    code,
+    itemId,
+    collected: room.collectedItems.size,
+    itemsTarget: config.items.length,
+    objectivesComplete: room.objectivesComplete
+  };
+}
+
+export function repairGenerator(socketId, generatorId) {
+  const found = findRoomBySocket(socketId);
+  if (!found || !found.room.started) return null;
+  const { code, room } = found;
+  const config = LEVELS[room.level];
+  if (!config.generators.some((g) => g.id === generatorId)) return null;
+
+  room.repairedGenerators.add(generatorId);
+  checkObjectivesComplete(room);
+  return {
+    code,
+    generatorId,
+    repaired: room.repairedGenerators.size,
+    generatorsTarget: config.generators.length,
+    objectivesComplete: room.objectivesComplete
+  };
+}
+
+// Любой игрок может воспользоваться разблокированной дверью — уровень общий на всю команду.
+export function useExitDoor(socketId) {
+  const found = findRoomBySocket(socketId);
+  if (!found || !found.room.started) return { error: 'Вы не в игре' };
+  const { code, room } = found;
+  if (!room.objectivesComplete) return { error: 'Цели ещё не выполнены' };
+
+  room.level += 1;
+  if (room.level >= LEVELS.length) {
+    return { code, won: true };
+  }
+
+  room.entity = createEntity();
+  room.collectedItems = new Set();
+  room.repairedGenerators = new Set();
+  room.objectivesComplete = false;
+  for (const p of room.players.values()) p.eliminated = false;
+
+  return { code, won: false, level: room.level };
 }
 
 export function markPlayerCaught(socketId) {

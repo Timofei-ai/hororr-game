@@ -6,10 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { readdirSync } from 'node:fs';
 import {
   createRoom, joinRoom, startRoom, leaveRoom,
-  updatePlayerPosition, setPlayerFlashlight, markPlayerCaught, forEachStartedRoom
+  updatePlayerPosition, setPlayerFlashlight, markPlayerCaught, forEachStartedRoom,
+  collectItem, repairGenerator, useExitDoor
 } from './rooms.js';
 import { tickEntity, distance2D, MOVING_THRESHOLD } from './entity.js';
 import { tickHallucinations } from './hallucinations.js';
+import { LEVELS } from '../levels.js';
 
 const ENTITY_TICK_MS = 100;
 
@@ -76,15 +78,36 @@ io.on('connection', (socket) => {
     io.to(result.room.code).emit('game_started', result.room);
   });
 
-  socket.on('player_move', ({ position, rotationY }) => {
+  socket.on('player_move', ({ position, rotationY, sprinting }) => {
     const found = [...socket.rooms].find((code) => code !== socket.id);
     if (!found) return;
-    updatePlayerPosition(socket.id, { x: position[0], y: position[1], z: position[2] });
+    updatePlayerPosition(socket.id, { x: position[0], y: position[1], z: position[2] }, sprinting);
     socket.to(found).emit('player_moved', { id: socket.id, position, rotationY });
   });
 
   socket.on('flashlight_state', ({ on }) => {
     setPlayerFlashlight(socket.id, Boolean(on));
+  });
+
+  socket.on('collect_item', ({ itemId }) => {
+    const result = collectItem(socket.id, itemId);
+    if (result) io.to(result.code).emit('item_collected', result);
+  });
+
+  socket.on('repair_generator', ({ generatorId }) => {
+    const result = repairGenerator(socket.id, generatorId);
+    if (result) io.to(result.code).emit('generator_repaired', result);
+  });
+
+  socket.on('use_exit_door', (_data, ack) => {
+    const result = useExitDoor(socket.id);
+    if (result.error) {
+      ack({ ok: false, error: result.error });
+      return;
+    }
+    ack({ ok: true });
+    if (result.won) io.to(result.code).emit('game_won', {});
+    else io.to(result.code).emit('level_changed', { level: result.level });
   });
 
   socket.on('disconnect', () => {
@@ -106,10 +129,12 @@ setInterval(() => {
       position: p.position,
       flashlightOn: p.flashlightOn,
       eliminated: p.eliminated,
-      moving: p.position && p.lastPosition ? distance2D(p.position, p.lastPosition) > MOVING_THRESHOLD : false
+      moving: p.position && p.lastPosition ? distance2D(p.position, p.lastPosition) > MOVING_THRESHOLD : false,
+      sprinting: p.sprinting
     }));
 
-    const result = tickEntity(room.entity, players, dt);
+    const config = LEVELS[room.level] || LEVELS[0];
+    const result = tickEntity(room.entity, players, dt, config.entitySpeedMultiplier);
     io.to(code).emit('entity_update', { position: room.entity.position, state: room.entity.state });
 
     if (result?.caughtId) {
@@ -118,7 +143,7 @@ setInterval(() => {
       if (caught?.allCaught) io.to(code).emit('game_over', { result: 'lose' });
     }
 
-    tickHallucinations(io, room, ENTITY_TICK_MS);
+    tickHallucinations(io, room, ENTITY_TICK_MS, config.hallucinationMultiplier);
   });
 }, ENTITY_TICK_MS);
 

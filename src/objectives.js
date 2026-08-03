@@ -1,6 +1,5 @@
-// Прогресс целей уровня: собрать N предметов и починить M генераторов.
-// Показывается в панели в углу экрана; при выполнении обоих условий
-// вызывается onComplete (открывает дверь выхода).
+// Прогресс целей уровня общий на всю команду — сервер решает, кто что собрал/
+// починил, здесь только отображение панели в углу экрана.
 export function createObjectives({ itemsTarget, generatorsTarget, onComplete }) {
   const panel = document.getElementById('objectives-panel');
   let items = 0;
@@ -14,25 +13,16 @@ export function createObjectives({ itemsTarget, generatorsTarget, onComplete }) 
     `;
   }
 
-  function checkComplete() {
-    if (!completed && items >= itemsTarget && generators >= generatorsTarget) {
+  function setCounts({ items: newItems, generators: newGenerators, objectivesComplete }) {
+    if (newItems != null) items = newItems;
+    if (newGenerators != null) generators = newGenerators;
+    render();
+    if (objectivesComplete && !completed) {
       completed = true;
       onComplete();
     }
   }
 
-  function collectItem() {
-    items = Math.min(itemsTarget, items + 1);
-    render();
-    checkComplete();
-  }
-
-  function activateGenerator() {
-    generators = Math.min(generatorsTarget, generators + 1);
-    render();
-    checkComplete();
-  }
-
   render();
-  return { collectItem, activateGenerator };
+  return { setCounts };
 }

@@ -1,14 +1,13 @@
 import * as THREE from 'three';
-import { createRoom, ROOM_SIZE, createExitDoor } from './scene.js';
+import { LEVELS } from '../levels.js';
+import { createRoom, ROOM_SIZE, scatterDecor } from './scene.js';
 import { createPlayer } from './player.js';
 import { createRemotePlayerManager } from './remotePlayers.js';
 import { createHud } from './hud.js';
 import { net } from './net.js';
 import { createFlashlightSystem } from './flashlight.js';
 import { createInventory } from './inventory.js';
-import { createObjectives } from './objectives.js';
-import { createItemPickup } from './pickups.js';
-import { createGeneratorRepair } from './generators.js';
+import { createLevelController } from './level.js';
 import { showToast } from './toast.js';
 import { createAudioListener, startAmbientAudio } from './audio.js';
 import { createEntityRenderer } from './entity.js';
@@ -16,6 +15,7 @@ import { createHallucinationSystem } from './hallucinations.js';
 
 const MOVE_SEND_INTERVAL = 1 / 20; // 20 обновлений позиции в секунду достаточно для плавности
 const EYE_HEIGHT = 1.6;
+const SPAWN = new THREE.Vector3(0, EYE_HEIGHT, ROOM_SIZE.depth / 2 - 2);
 
 export function startGame(session) {
   const app = document.getElementById('app');
@@ -23,32 +23,27 @@ export function startGame(session) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
   app.prepend(renderer.domElement);
 
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 
   const scene = createRoom();
+  scatterDecor(scene);
 
   const player = createPlayer({
     camera,
     domElement: renderer.domElement,
     scene,
     roomHalfExtents: { width: ROOM_SIZE.width / 2 - 0.4, depth: ROOM_SIZE.depth / 2 - 0.4 },
-    spawn: new THREE.Vector3(0, EYE_HEIGHT, ROOM_SIZE.depth / 2 - 2)
+    spawn: SPAWN.clone()
   });
   document.getElementById('blocker').classList.remove('hidden');
   const audioListener = createAudioListener(camera);
   player.controls.addEventListener('lock', () => startAmbientAudio(audioListener), { once: true });
 
   const inventory = createInventory();
-  const objectives = createObjectives({
-    itemsTarget: 3,
-    generatorsTarget: 2,
-    onComplete: () => {
-      exitDoor.setUnlocked(true);
-      showToast('Все цели выполнены! Дверь открыта.');
-    }
-  });
 
   createFlashlightSystem({
     scene, camera, player, inventory,
@@ -56,31 +51,8 @@ export function startGame(session) {
     onChange: (isOn) => net.sendFlashlightState(isOn)
   });
 
-  const itemPositions = [
-    new THREE.Vector3(-4, 0, -4),
-    new THREE.Vector3(4, 0, 0),
-    new THREE.Vector3(-3, 0, 5)
-  ];
-  itemPositions.forEach((position, i) => {
-    createItemPickup({
-      scene, player, inventory, objectives, position,
-      id: `fuse-${i}`, label: 'Предохранитель', icon: '🔧'
-    });
-  });
-
-  const generatorPositions = [
-    new THREE.Vector3(5, 0, -5),
-    new THREE.Vector3(-5, 0, 3)
-  ];
-  const generatorTickers = generatorPositions.map((position, i) =>
-    createGeneratorRepair({ scene, player, objectives, position, id: `generator-${i}` })
-  );
-
-  const exitDoor = createExitDoor(
-    scene,
-    new THREE.Vector3(ROOM_SIZE.width / 2 - 0.05, 1.2, -ROOM_SIZE.depth / 2 + 3),
-    -Math.PI / 2
-  );
+  const levelController = createLevelController({ scene, player, inventory });
+  levelController.buildLevel(session.level || 0);
 
   const remotePlayers = createRemotePlayerManager(scene);
   for (const p of session.players) {
@@ -100,6 +72,8 @@ export function startGame(session) {
   });
   net.onEntityUpdate((payload) => entity.setState(payload));
   net.onHallucination((payload) => hallucinations.handle(payload));
+  net.onItemCollected((payload) => levelController.handleItemCollected(payload));
+  net.onGeneratorRepaired((payload) => levelController.handleGeneratorRepaired(payload));
   net.onPlayerCaught(({ id }) => {
     hud.setEliminated(id, true);
     if (id === session.selfId) {
@@ -112,6 +86,17 @@ export function startGame(session) {
   net.onGameOver(() => {
     document.getElementById('catch-message').textContent = 'Раунд окончен: все игроки пойманы.';
     showToast('Все игроки пойманы. Раунд окончен.', 8000);
+  });
+  net.onLevelChanged(({ level }) => {
+    player.setFrozen(false);
+    document.getElementById('catch-overlay').classList.add('hidden');
+    player.getPosition().copy(SPAWN);
+    levelController.buildLevel(level);
+    showToast(`Уровень ${level + 1}: ${LEVELS[level].name}`, 5000);
+  });
+  net.onGameWon(() => {
+    player.setFrozen(true);
+    showToast('ПОБЕДА! Вы прошли все уровни и выбрались из больницы.', 10000);
   });
 
   window.addEventListener('resize', () => {
@@ -131,12 +116,12 @@ export function startGame(session) {
     remotePlayers.tick(delta);
     entity.tick(delta);
     hallucinations.tick(delta);
-    for (const gen of generatorTickers) gen.tick(delta, player.getPosition());
+    levelController.tick(delta, player.getPosition());
 
     sendTimer += delta;
     if (sendTimer >= MOVE_SEND_INTERVAL) {
       sendTimer = 0;
-      net.sendMove(camera.position.toArray(), camera.rotation.y);
+      net.sendMove(camera.position.toArray(), camera.rotation.y, player.isSprinting());
     }
 
     renderer.render(scene, camera);

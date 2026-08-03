@@ -124,7 +124,8 @@ export function runLobbyFlow() {
         selfId: state.selfId,
         nickname: state.nickname,
         color: self ? self.color : 0xffffff,
-        players: room.players
+        players: room.players,
+        level: room.level || 0
       });
     });
   });

@@ -115,6 +115,20 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
   intensities — Three.js r155+ uses physically-correct light units, so the
   old placeholder intensities (~6) were nearly invisible. See CREDITS.md for
   the model's CC-BY-4.0 attribution.
+- ✅ Multi-level progression — objectives/inventory moved server-side (a
+  real co-op fix: previously each client tracked items/generators locally,
+  so a teammate's pickup didn't disappear for anyone else). `levels.js` (repo
+  root, imported by both client and server) defines 3 levels sharing the
+  same room shell, each escalating item/generator counts, entity speed, and
+  hallucination frequency. Reaching the unlocked exit door and pressing E
+  advances everyone in the room to the next level (fresh entity, fresh
+  objectives, un-eliminates caught players); finishing level 3 broadcasts a
+  win. Room enlarged (16×22 → 22×30) with a checkered floor texture and
+  scattered clutter props (gurneys/cabinets/debris/ceiling lamps) for
+  atmosphere. Added sprint (Ctrl, 1.7×, reported to the server as extra
+  "noise" for entity detection) and brightened the flashlight substantially
+  (Three's physically-correct lighting made the earlier value too dim) plus
+  ACES tone mapping so close-range light doesn't clip to flat white.
 - ⬜ Stage 5 — hallucination system.
 - ⬜ Stage 6 — jumpscares.
 

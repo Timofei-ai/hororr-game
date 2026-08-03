@@ -3,6 +3,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { createInteractionManager } from './interactionManager.js';
 
 const MOVE_SPEED = 3.2;
+const SPRINT_MULTIPLIER = 1.7;
 const DAMPING = 8;
 const EYE_HEIGHT = 1.6;
 
@@ -19,7 +20,7 @@ export function createPlayer({ camera, domElement, scene, roomHalfExtents, spawn
 
   const interactions = createInteractionManager(playerObject);
 
-  const keys = { forward: false, back: false, left: false, right: false };
+  const keys = { forward: false, back: false, left: false, right: false, sprint: false };
   const velocity = new THREE.Vector3();
 
   window.addEventListener('keydown', (e) => setKey(e.code, true));
@@ -31,6 +32,7 @@ export function createPlayer({ camera, domElement, scene, roomHalfExtents, spawn
       case 'KeyS': case 'ArrowDown': keys.back = value; break;
       case 'KeyA': case 'ArrowLeft': keys.left = value; break;
       case 'KeyD': case 'ArrowRight': keys.right = value; break;
+      case 'ControlLeft': case 'ControlRight': keys.sprint = value; break;
     }
     if (value && code === 'KeyE') interactions.interact();
   }
@@ -54,8 +56,9 @@ export function createPlayer({ camera, domElement, scene, roomHalfExtents, spawn
     const moveX = Number(keys.right) - Number(keys.left);
     if (moveZ !== 0 || moveX !== 0) {
       const dir = new THREE.Vector3(moveX, 0, -moveZ).normalize();
-      velocity.x += dir.x * MOVE_SPEED * DAMPING * delta;
-      velocity.z += dir.z * MOVE_SPEED * DAMPING * delta;
+      const speed = MOVE_SPEED * (keys.sprint ? SPRINT_MULTIPLIER : 1);
+      velocity.x += dir.x * speed * DAMPING * delta;
+      velocity.z += dir.z * speed * DAMPING * delta;
     }
 
     controls.moveRight(velocity.x * delta);
@@ -72,6 +75,7 @@ export function createPlayer({ camera, domElement, scene, roomHalfExtents, spawn
     controls,
     update,
     getPosition: () => playerObject.position,
+    isSprinting: () => keys.sprint,
     registerInteractable: interactions.register,
     unregisterInteractable: interactions.unregister,
     setFrozen
