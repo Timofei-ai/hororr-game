@@ -11,6 +11,7 @@ import {
 } from './rooms.js';
 import { tickEntity, distance2D, MOVING_THRESHOLD } from './entity.js';
 import { tickHallucinations } from './hallucinations.js';
+import { tickJumpscares } from './jumpscares.js';
 import { LEVELS } from '../levels.js';
 
 const ENTITY_TICK_MS = 100;
@@ -34,6 +35,15 @@ function listPublicMedia(relDir) {
 // Отдаёт список файлов, которые реально лежат в public/... — так клиент
 // подхватывает любые файлы, добавленные пользователем, без переименования.
 app.get('/api/hallucination-sounds', (req, res) => res.json(listPublicMedia('audio/hallucinations')));
+
+// Джампскейры (Stage 6): картинки + звуки берутся из public/jumpscares —
+// пользователь может подкидывать свои файлы без переименования и пересборки.
+app.get('/api/jumpscares', (req, res) => {
+  res.json({
+    images: listPublicMedia('jumpscares').filter((f) => /\.(png|jpe?g)$/i.test(f)),
+    sounds: listPublicMedia('jumpscares/sounds').filter((f) => /\.(mp3|wav)$/i.test(f))
+  });
+});
 
 // В продакшене отдаём собранный клиент (npm run build -> dist/).
 // В разработке фронтом занимается Vite (npm run dev:client) на другом порту.
@@ -145,10 +155,12 @@ setInterval(() => {
     if (result?.caughtId) {
       const caught = markPlayerCaught(result.caughtId);
       io.to(code).emit('player_caught', { id: result.caughtId });
+      io.to(result.caughtId).emit('jumpscare', { reason: 'caught' });
       if (caught?.allCaught) io.to(code).emit('game_over', { result: 'lose' });
     }
 
     tickHallucinations(io, room, ENTITY_TICK_MS, config.hallucinationMultiplier);
+    tickJumpscares(io, room, ENTITY_TICK_MS, config.jumpscareMultiplier);
   });
 }, ENTITY_TICK_MS);
 

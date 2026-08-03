@@ -146,7 +146,21 @@ Give step-by-step instructions on how to publish the game online for free (e.g. 
   transform, so trusting them to guess "wrong up-axis" fixes was actively
   wrong for every model in this pack — all of them were already correctly
   oriented by GLTFLoader with zero extra rotation needed.
-- ⬜ Stage 6 — jumpscares.
+- ✅ Stage 6 — jumpscares: server picks who gets scared (rare, spaced-out
+  random ticks that scale with level + a guaranteed one on catch) and pushes
+  a personal `jumpscare` event; client shows a fullscreen image (instant, no
+  fade) + screen-shake + loud sound, sourced from `/public/jumpscares/` and
+  `/public/jumpscares/sounds/` (auto-scanned, same pattern as hallucination
+  sounds). Both folders were still empty (only READMEs) despite the original
+  spec text claiming files were "already prepared" — added a couple of
+  built-in emoji placeholders so it still works out of the box; user can drop
+  real .png/.jpg + .mp3/.wav files in at any time with no rebuild needed.
+- Also fixed: the hallucination "fake monster" silhouette wasn't rotated to
+  face the player (unlike the real entity), which read as broken/janky —
+  now faces the viewer like the real one. Replaced the plain capsule used
+  for other players with a simple jointed humanoid (head/torso/arms/legs)
+  that has a basic walk-swing tied to movement speed, since no rigged
+  player-character model has been supplied yet.
 
 ## Addendum: nickname + lobby system (added after Stage 1, folded into Stage 2)
 

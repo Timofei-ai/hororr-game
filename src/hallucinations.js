@@ -5,6 +5,9 @@ const OBJECT_SWAP_DURATION = 3.5;
 const PHANTOM_DURATION = 4;
 const DISTORTION_DURATION = 2.5;
 const BASE_FOV = 75;
+// Тот же угол, что и у настоящей сущности (src/entity.js) — иначе призрак
+// монстра стоит в неестественной позе вместо того, чтобы "смотреть" на игрока.
+const MODEL_FORWARD_OFFSET = Math.PI;
 
 function createPlaceholderMonster() {
   const group = new THREE.Group();
@@ -27,10 +30,14 @@ function createPlaceholderMonster() {
 
 // "Подмена объекта": на месте, где ничего нет, на пару секунд появляется
 // монстр — берём тот же клон модели, что и настоящая сущность, чтобы жертва
-// на миг не могла отличить призрака от реального монстра.
-function createFakeMonster(scene, position) {
+// на миг не могла отличить призрака от реального монстра. Разворачиваем его
+// лицом к игроку — иначе фигура стоит в случайной позе и выглядит как баг,
+// а не как жуткое видение, уставившееся на вас.
+function createFakeMonster(scene, position, viewerPosition) {
   const group = new THREE.Group();
   group.position.set(position.x, 0, position.z);
+  const angle = Math.atan2(viewerPosition.x - position.x, viewerPosition.z - position.z) + MODEL_FORWARD_OFFSET;
+  group.rotation.y = angle;
   group.add(createPlaceholderMonster());
   scene.add(group);
 
@@ -71,7 +78,7 @@ export function createHallucinationSystem({ scene, camera, renderer, remotePlaye
   }
 
   function spawnObjectSwap(position) {
-    const mesh = createFakeMonster(scene, position);
+    const mesh = createFakeMonster(scene, position, camera.position);
     setTimeout(() => scene.remove(mesh), OBJECT_SWAP_DURATION * 1000);
   }
 

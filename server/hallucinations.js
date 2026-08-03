@@ -29,7 +29,7 @@ function buildPayload(type, player, others) {
 // сервер отправляет событие только этому одному сокету. chanceMultiplier растёт
 // с номером уровня — чем дальше, тем чаще накрывает.
 export function tickHallucinations(io, room, dtMs, chanceMultiplier = 1) {
-  const alive = [...room.players.entries()].filter(([, p]) => !p.eliminated && p.position);
+  const alive = [...room.players.entries()].filter(([, p]) => !p.eliminated && p.position && !p.admin);
 
   for (const [id, p] of alive) {
     p.hallucinationCooldown = (p.hallucinationCooldown || 0) - dtMs;

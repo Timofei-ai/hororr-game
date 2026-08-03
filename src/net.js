@@ -30,6 +30,7 @@ export const net = {
   onPlayerCaught: (cb) => socket.on('player_caught', cb),
   onGameOver: (cb) => socket.on('game_over', cb),
   onHallucination: (cb) => socket.on('hallucination', cb),
+  onJumpscare: (cb) => socket.on('jumpscare', cb),
   onItemCollected: (cb) => socket.on('item_collected', cb),
   onGeneratorRepaired: (cb) => socket.on('generator_repaired', cb),
   onLevelChanged: (cb) => socket.on('level_changed', cb),

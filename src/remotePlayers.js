@@ -26,25 +26,55 @@ function makeNameSprite(nickname, colorInt) {
   return sprite;
 }
 
-// Управляет визуальным представлением ДРУГИХ игроков: капсула + бирка с ником,
-// которая всегда развёрнута к камере (THREE.Sprite это делает автоматически).
+// Простая низкополигональная фигура человека (голова + торс + руки + ноги)
+// вместо капсулы-заглушки — у неё есть силуэт и лёгкая походка при движении.
+function buildHumanoid(colorInt) {
+  const group = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({ color: colorInt, roughness: 0.75 });
+
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.6, 0.24), material);
+  torso.position.y = 1.1;
+  group.add(torso);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), material);
+  head.position.y = 1.55;
+  group.add(head);
+
+  const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.75, 8);
+  const legL = new THREE.Mesh(legGeo, material);
+  legL.position.set(-0.12, 0.42, 0);
+  group.add(legL);
+  const legR = new THREE.Mesh(legGeo, material);
+  legR.position.set(0.12, 0.42, 0);
+  group.add(legR);
+
+  const armGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.55, 8);
+  const armL = new THREE.Mesh(armGeo, material);
+  armL.position.set(-0.32, 1.05, 0);
+  group.add(armL);
+  const armR = new THREE.Mesh(armGeo, material);
+  armR.position.set(0.32, 1.05, 0);
+  group.add(armR);
+
+  return { group, material, legL, legR, armL, armR };
+}
+
+// Управляет визуальным представлением ДРУГИХ игроков: фигурка человека + бирка
+// с ником, которая всегда развёрнута к камере (THREE.Sprite это делает автоматически).
 export function createRemotePlayerManager(scene) {
   const players = new Map();
 
   function addPlayer(id, nickname, colorInt) {
     if (players.has(id)) return;
 
-    const group = new THREE.Group();
-    const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.3, 1.1, 4, 8),
-      new THREE.MeshStandardMaterial({ color: colorInt, roughness: 0.7 })
-    );
-    body.position.y = 0.95;
-    group.add(body);
+    const { group, material, legL, legR, armL, armR } = buildHumanoid(colorInt);
     group.add(makeNameSprite(nickname, colorInt));
 
     scene.add(group);
-    players.set(id, { group, body, target: group.position.clone(), targetRotY: 0 });
+    players.set(id, {
+      group, material, legL, legR, armL, armR,
+      target: group.position.clone(), targetRotY: 0, walkPhase: 0
+    });
   }
 
   function updateTarget(id, position, rotationY) {
@@ -72,14 +102,31 @@ export function createRemotePlayerManager(scene) {
   function setEliminated(id) {
     const p = players.get(id);
     if (!p) return;
-    p.body.material.color.set(0x333333);
+    p.material.color.set(0x333333);
   }
 
   function tick(delta) {
     const lerpFactor = Math.min(1, delta * 10);
     for (const p of players.values()) {
+      const prevPos = p.group.position.clone();
       p.group.position.lerp(p.target, lerpFactor);
       p.group.rotation.y += (p.targetRotY - p.group.rotation.y) * lerpFactor;
+
+      // Лёгкая походка: качаем руки/ноги пропорционально скорости смещения.
+      const speed = p.group.position.distanceTo(prevPos) / Math.max(delta, 0.0001);
+      if (speed > 0.05) {
+        p.walkPhase += delta * Math.min(speed, 4) * 6;
+        const swing = Math.sin(p.walkPhase) * 0.5;
+        p.legL.rotation.x = swing;
+        p.legR.rotation.x = -swing;
+        p.armL.rotation.x = -swing;
+        p.armR.rotation.x = swing;
+      } else {
+        p.legL.rotation.x *= 0.8;
+        p.legR.rotation.x *= 0.8;
+        p.armL.rotation.x *= 0.8;
+        p.armR.rotation.x *= 0.8;
+      }
     }
   }
 

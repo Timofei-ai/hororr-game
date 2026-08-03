@@ -17,7 +17,7 @@ function grid(count, xRange, zRange) {
   return positions;
 }
 
-function makeLevel({ name, fogDensity, entitySpeedMultiplier, hallucinationMultiplier, itemCount, generatorCount, idPrefix }) {
+function makeLevel({ name, fogDensity, entitySpeedMultiplier, hallucinationMultiplier, jumpscareMultiplier, itemCount, generatorCount, idPrefix }) {
   const itemSpots = grid(itemCount, [-9.5, -1.5], [-9, 9.5]);
   const generatorSpots = grid(generatorCount, [1.5, 9.5], [-9, 9.5]);
   return {
@@ -25,6 +25,7 @@ function makeLevel({ name, fogDensity, entitySpeedMultiplier, hallucinationMulti
     fogDensity,
     entitySpeedMultiplier,
     hallucinationMultiplier,
+    jumpscareMultiplier,
     items: itemSpots.map((p, i) => ({ id: `${idPrefix}-fuse-${i}`, x: p.x, z: p.z })),
     generators: generatorSpots.map((p, i) => ({ id: `${idPrefix}-gen-${i}`, x: p.x, z: p.z }))
   };
@@ -36,6 +37,7 @@ export const LEVELS = [
     fogDensity: 0.07,
     entitySpeedMultiplier: 1,
     hallucinationMultiplier: 1,
+    jumpscareMultiplier: 1,
     itemCount: 5,
     generatorCount: 3,
     idPrefix: 'l1'
@@ -45,6 +47,7 @@ export const LEVELS = [
     fogDensity: 0.09,
     entitySpeedMultiplier: 1.2,
     hallucinationMultiplier: 1.4,
+    jumpscareMultiplier: 1.5,
     itemCount: 6,
     generatorCount: 4,
     idPrefix: 'l2'
@@ -54,6 +57,7 @@ export const LEVELS = [
     fogDensity: 0.11,
     entitySpeedMultiplier: 1.4,
     hallucinationMultiplier: 1.8,
+    jumpscareMultiplier: 2,
     itemCount: 8,
     generatorCount: 5,
     idPrefix: 'l3'

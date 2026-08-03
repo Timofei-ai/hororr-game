@@ -12,6 +12,7 @@ import { showToast } from './toast.js';
 import { createAudioListener, startAmbientAudio } from './audio.js';
 import { createEntityRenderer } from './entity.js';
 import { createHallucinationSystem } from './hallucinations.js';
+import { createJumpscareSystem } from './jumpscare.js';
 
 const MOVE_SEND_INTERVAL = 1 / 20; // 20 обновлений позиции в секунду достаточно для плавности
 const EYE_HEIGHT = 1.6;
@@ -80,6 +81,7 @@ export function startGame(session) {
   const hud = createHud(session.players, session.selfId);
   const entity = createEntityRenderer(scene);
   const hallucinations = createHallucinationSystem({ scene, camera, renderer, remotePlayers, audioListener });
+  const jumpscares = createJumpscareSystem({ audioListener });
 
   net.onPlayerMoved(({ id, position, rotationY }) => {
     remotePlayers.updateTarget(id, position, rotationY);
@@ -89,6 +91,7 @@ export function startGame(session) {
   });
   net.onEntityUpdate((payload) => entity.setState(payload));
   net.onHallucination((payload) => hallucinations.handle(payload));
+  net.onJumpscare(() => jumpscares.trigger());
   net.onItemCollected((payload) => levelController.handleItemCollected(payload));
   net.onGeneratorRepaired((payload) => levelController.handleGeneratorRepaired(payload));
   net.onPlayerCaught(({ id }) => {
